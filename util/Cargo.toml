@@ -28,6 +28,7 @@ monero-wallet = { git = "https://github.com/monero-oxide/monero-oxide", default-
 monero-seed = { path = "../seed", default-features = false }
 polyseed = { path = "../polyseed", default-features = false }
 
+monero-payment-proofs = { path = "../payment-proofs", default-features = false }
 
 [features]
 std = [
@@ -42,6 +43,8 @@ std = [
 
   "monero-seed/std",
   "polyseed/std",
+
+  "monero-payment-proofs/std",
 ]
 compile-time-generators = ["monero-wallet/compile-time-generators"]
 multisig = ["monero-wallet/multisig"]

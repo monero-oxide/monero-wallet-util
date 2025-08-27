@@ -15,10 +15,7 @@ These libraries are less often maintained, with less stability guarantees, than
 
 - [Monero Seed](seed)
 - [Polyseed](polyseed)
-
-### In Development
-
-- [Monero Payment Proofs](https://github.com/monero-oxide/monero-wallet-utils/pull/1)
+- [Monero Payment Proofs](payment-proofs)
 
 ### Wishlist
 
