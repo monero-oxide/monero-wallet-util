@@ -6,6 +6,8 @@ members = [
 
   "util",
 
+  "interface/web-sys",
+
   "tests/no-std",
 ]
 

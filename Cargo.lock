@@ -3,18 +3,6 @@
 version = 3
 
 [[package]]
-name = "ahash"
-version = "0.8.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
-dependencies = [
- "cfg-if",
- "once_cell",
- "version_check",
- "zerocopy",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -86,6 +74,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bumpalo"
+version = "3.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,7 +103,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ae44ce6224d75ced726e5597265b8f334b9bf4767b8b42e058f2304005d8475"
 dependencies = [
- "dalek-ff-group",
+ "dalek-ff-group 0.4.4",
  "digest",
  "elliptic-curve",
  "ff",
@@ -174,6 +168,7 @@ dependencies = [
  "cpufeatures",
  "curve25519-dalek-derive",
  "digest",
+ "ff",
  "fiat-crypto",
  "group",
  "rand_core",
@@ -199,6 +194,25 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb3665951647a80a4ce58562c8bfc5df9d2a2d4f0021b72a0c0ddf408737feeb"
 dependencies = [
+ "crypto-bigint",
+ "curve25519-dalek",
+ "digest",
+ "ff",
+ "group",
+ "rand_core",
+ "rustversion",
+ "sha2",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "dalek-ff-group"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26103554e8f7857b6015a4a9ef551c6ce0669f6caa040785d4394bf52041ccaf"
+dependencies = [
+ "ciphersuite",
  "crypto-bigint",
  "curve25519-dalek",
  "digest",
@@ -315,6 +329,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
 name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -364,18 +384,18 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
-dependencies = [
- "ahash",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
+
+[[package]]
+name = "hashbrown"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "hex"
@@ -415,6 +435,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
+name = "js-sys"
+version = "0.3.78"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c0b063578492ceec17683ef2f8c5e89121fbd0b172cbc280635ab7567db2738"
+dependencies = [
+ "once_cell",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "k256"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -446,6 +476,12 @@ name = "libm"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
+
+[[package]]
+name = "log"
+version = "0.4.28"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
 name = "memchr"
@@ -488,7 +524,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ec2ce627391a5db2d7a253a37be37d23dcb786fa763ea516f496032e442492d"
 dependencies = [
  "ciphersuite",
- "dalek-ff-group",
+ "dalek-ff-group 0.4.4",
  "digest",
  "dkg",
  "flexible-transcript",
@@ -504,11 +540,23 @@ dependencies = [
 [[package]]
 name = "monero-address"
 version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-base58 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "thiserror 2.0.16",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-address"
+version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "monero-base58",
- "monero-io",
+ "monero-base58 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "thiserror 2.0.16",
  "zeroize",
 ]
@@ -516,10 +564,32 @@ dependencies = [
 [[package]]
 name = "monero-base58"
 version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "std-shims",
+]
+
+[[package]]
+name = "monero-base58"
+version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
- "monero-primitives",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "std-shims",
+]
+
+[[package]]
+name = "monero-borromean"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "std-shims",
+ "zeroize",
 ]
 
 [[package]]
@@ -528,10 +598,25 @@ version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
- "monero-io",
- "monero-primitives",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "std-shims",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-bulletproofs"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "rand_core",
+ "std-shims",
+ "thiserror 2.0.16",
  "zeroize",
 ]
 
@@ -541,11 +626,27 @@ version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
- "monero-io",
- "monero-primitives",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "rand_core",
  "std-shims",
+ "thiserror 2.0.16",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-clsag"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "rand_core",
+ "std-shims",
+ "subtle",
  "thiserror 2.0.16",
  "zeroize",
 ]
@@ -556,13 +657,13 @@ version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "dalek-ff-group",
+ "dalek-ff-group 0.4.4",
  "flexible-transcript",
  "group",
  "modular-frost",
- "monero-generators",
- "monero-io",
- "monero-primitives",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "rand_chacha",
  "rand_core",
  "std-shims",
@@ -572,18 +673,71 @@ dependencies = [
 ]
 
 [[package]]
+name = "monero-daemon-rpc"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "hex",
+ "monero-address 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-interface",
+ "monero-oxide 0.1.4-alpha (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "serde",
+ "serde_json",
+ "std-shims",
+]
+
+[[package]]
+name = "monero-generators"
+version = "0.4.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "crypto-bigint",
+ "curve25519-dalek",
+ "dalek-ff-group 0.5.0",
+ "group",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "sha3",
+ "std-shims",
+ "subtle",
+]
+
+[[package]]
 name = "monero-generators"
 version = "0.4.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "crypto-bigint",
  "curve25519-dalek",
- "dalek-ff-group",
+ "dalek-ff-group 0.4.4",
  "group",
- "monero-io",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "sha3",
  "std-shims",
  "subtle",
+]
+
+[[package]]
+name = "monero-interface"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "hex",
+ "monero-oxide 0.1.4-alpha (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "std-shims",
+ "thiserror 2.0.16",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-io"
+version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "std-shims",
+ "zeroize",
 ]
 
 [[package]]
@@ -598,14 +752,46 @@ dependencies = [
 [[package]]
 name = "monero-mlsag"
 version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "std-shims",
+ "thiserror 2.0.16",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-mlsag"
+version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
- "monero-io",
- "monero-primitives",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "std-shims",
  "thiserror 2.0.16",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-oxide"
+version = "0.1.4-alpha"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "hex-literal",
+ "monero-borromean 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-bulletproofs 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-clsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-mlsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "std-shims",
  "zeroize",
 ]
 
@@ -616,13 +802,13 @@ source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c
 dependencies = [
  "curve25519-dalek",
  "hex-literal",
- "monero-borromean",
- "monero-bulletproofs",
- "monero-clsag",
- "monero-generators",
- "monero-io",
- "monero-mlsag",
- "monero-primitives",
+ "monero-borromean 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-bulletproofs 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-clsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-mlsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "std-shims",
  "zeroize",
 ]
@@ -637,11 +823,24 @@ dependencies = [
 [[package]]
 name = "monero-primitives"
 version = "0.1.0"
+source = "git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802#e2e80947549b176469967fcdde90a23f69881802"
+dependencies = [
+ "curve25519-dalek",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide?rev=e2e80947549b176469967fcdde90a23f69881802)",
+ "sha3",
+ "std-shims",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-primitives"
+version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
- "monero-io",
+ "monero-generators 0.4.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "sha3",
  "std-shims",
  "zeroize",
@@ -654,8 +853,8 @@ source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c
 dependencies = [
  "curve25519-dalek",
  "hex",
- "monero-address",
- "monero-oxide",
+ "monero-address 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-oxide 0.1.4-alpha (git+https://github.com/monero-oxide/monero-oxide)",
  "serde",
  "serde_json",
  "std-shims",
@@ -669,7 +868,7 @@ version = "0.1.0"
 dependencies = [
  "curve25519-dalek",
  "hex",
- "monero-primitives",
+ "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
  "rand_core",
  "std-shims",
  "thiserror 1.0.69",
@@ -682,13 +881,13 @@ version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#6966575e05fe09b77674c46984b21686ed9304ff"
 dependencies = [
  "curve25519-dalek",
- "dalek-ff-group",
+ "dalek-ff-group 0.4.4",
  "flexible-transcript",
  "hex",
  "modular-frost",
- "monero-address",
- "monero-clsag",
- "monero-oxide",
+ "monero-address 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-clsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
+ "monero-oxide 0.1.4-alpha (git+https://github.com/monero-oxide/monero-oxide)",
  "monero-rpc",
  "rand",
  "rand_chacha",
@@ -709,6 +908,18 @@ dependencies = [
  "rand_core",
  "std-shims",
  "thiserror 1.0.69",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-web-sys-rpc"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "monero-daemon-rpc",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "zeroize",
 ]
 
@@ -1036,11 +1247,11 @@ dependencies = [
 
 [[package]]
 name = "std-shims"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fbb9ed849fede2765386134c64bc8984081e8c8408bc9201b99c6e3143ec5e7"
+checksum = "227c4f8561598188d0df96dbe749824576174bba278b5b6bb2eacff1066067d0"
 dependencies = [
- "hashbrown 0.14.5",
+ "hashbrown 0.16.0",
  "rustversion",
  "spin",
 ]
@@ -1148,6 +1359,87 @@ name = "wasi"
 version = "0.11.1+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
+
+[[package]]
+name = "wasm-bindgen"
+version = "0.2.101"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e14915cadd45b529bb8d1f343c4ed0ac1de926144b746e2710f9cd05df6603b"
+dependencies = [
+ "cfg-if",
+ "once_cell",
+ "wasm-bindgen-macro",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-backend"
+version = "0.2.101"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28d1ba982ca7923fd01448d5c30c6864d0a14109560296a162f80f305fb93bb"
+dependencies = [
+ "bumpalo",
+ "log",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-futures"
+version = "0.4.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ca85039a9b469b38336411d6d6ced91f3fc87109a2a27b0c197663f5144dffe"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "once_cell",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "wasm-bindgen-macro"
+version = "0.2.101"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c3d463ae3eff775b0c45df9da45d68837702ac35af998361e2c84e7c5ec1b0d"
+dependencies = [
+ "quote",
+ "wasm-bindgen-macro-support",
+]
+
+[[package]]
+name = "wasm-bindgen-macro-support"
+version = "0.2.101"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bb4ce89b08211f923caf51d527662b75bdc9c9c7aab40f86dcb9fb85ac552aa"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wasm-bindgen-backend",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-shared"
+version = "0.2.101"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f143854a3b13752c6950862c906306adb27c7e839f7414cec8fea35beab624c1"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
+name = "web-sys"
+version = "0.3.78"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77e4b637749ff0d92b8fad63aa1f7cff3cbe125fd49c175cd6345e7272638b12"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "winnow"
