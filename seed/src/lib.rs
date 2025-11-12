@@ -219,7 +219,7 @@ fn seed_to_bytes(lang: Language, words: &str) -> Result<Zeroizing<[u8; 32]>, See
   // get seed words
   let words = words.split_whitespace().map(|w| Zeroizing::new(w.to_string())).collect::<Vec<_>>();
   if (words.len() != SEED_LENGTH) && (words.len() != SEED_LENGTH_WITH_CHECKSUM) {
-    panic!("invalid seed passed to seed_to_bytes");
+    Err(SeedError::InvalidSeed)?;
   }
 
   let has_checksum = words.len() == SEED_LENGTH_WITH_CHECKSUM;
