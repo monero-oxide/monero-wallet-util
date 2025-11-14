@@ -1,0 +1,42 @@
+[package]
+name = "monero-payment-proofs"
+version = "0.1.0"
+description = "Payment proofs for the Monero protocol"
+license = "MIT"
+repository = "https://github.com/monero-oxide/monero-wallet-util/tree/main/payment-proofs"
+authors = ["Luke Parker <lukeparker5132@gmail.com>"]
+edition = "2021"
+rust-version = "1.75"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[dependencies]
+std-shims = { version = "0.1.4", default-features = false }
+
+zeroize = { version = "^1.5", default-features = false, features = ["zeroize_derive"] }
+rand_core = { version = "0.6", default-features = false }
+
+sha3 = { version = "0.10", default-features = false }
+curve25519-dalek = { version = "4", default-features = false, features = ["alloc", "zeroize"] }
+
+monero-base58 = { git = "https://github.com/monero-oxide/monero-oxide", default-features = false }
+monero-wallet = { git = "https://github.com/monero-oxide/monero-oxide", default-features = false }
+
+[features]
+std = [
+  "std-shims/std",
+
+  "zeroize/std",
+  "rand_core/std",
+
+  "sha3/std",
+
+  "monero-base58/std",
+  "monero-wallet/std",
+]
+default = ["std"]

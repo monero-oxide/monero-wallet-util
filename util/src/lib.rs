@@ -7,3 +7,5 @@ pub use monero_wallet::*;
 
 /// Seed creation and parsing functionality.
 pub mod seed;
+/// Payment proofs for Monero transactions.
+pub use monero_payment_proofs as payment_proofs;
