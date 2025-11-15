@@ -18,7 +18,7 @@ These libraries are less often maintained, with less stability guarantees, than
 
 ### In Development
 
-- [Monero Payment Proofs](https://github.com/monero-oxide/monero-wallet-utils/pull/1)
+- [Monero Payment Proofs](https://github.com/monero-oxide/monero-wallet-util/pull/1)
 
 ### Wishlist
 
