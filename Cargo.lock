@@ -606,6 +606,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "monero-epee"
+version = "0.2.0"
+source = "git+https://github.com/monero-oxide/monero-oxide#aebc44f0c8dad70b1062e0d5ba88fb6b990fd515"
+
+[[package]]
+name = "monero-epee-derive"
+version = "0.1.0"
+dependencies = [
+ "monero-epee-traits",
+]
+
+[[package]]
+name = "monero-epee-traits"
+version = "0.1.0"
+dependencies = [
+ "monero-epee",
+]
+
+[[package]]
 name = "monero-io"
 version = "0.1.0"
 source = "git+https://github.com/monero-oxide/monero-oxide#aebc44f0c8dad70b1062e0d5ba88fb6b990fd515"
@@ -714,6 +733,8 @@ dependencies = [
 name = "monero-wallet-util"
 version = "0.1.0"
 dependencies = [
+ "monero-epee-derive",
+ "monero-epee-traits",
  "monero-seed",
  "monero-wallet",
  "polyseed",
