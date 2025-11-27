@@ -28,6 +28,8 @@ monero-wallet = { git = "https://github.com/monero-oxide/monero-oxide", default-
 monero-seed = { path = "../seed", default-features = false }
 polyseed = { path = "../polyseed", default-features = false }
 
+monero-epee-traits = { path = "../epee/traits", default-features = false }
+monero-epee-derive = { path = "../epee/derive", default-features = false }
 
 [features]
 std = [

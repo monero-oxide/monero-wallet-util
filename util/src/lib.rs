@@ -7,3 +7,9 @@ pub use monero_wallet::*;
 
 /// Seed creation and parsing functionality.
 pub mod seed;
+
+/// Deserialization of EPEE-encoded values.
+pub mod epee {
+  pub use monero_epee_traits::*;
+  pub use monero_epee_derive::*;
+}

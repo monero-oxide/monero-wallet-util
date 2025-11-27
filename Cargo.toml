@@ -4,6 +4,9 @@ members = [
   "seed",
   "polyseed",
 
+  "epee/traits",
+  "epee/derive",
+
   "util",
 
   "tests/no-std",
