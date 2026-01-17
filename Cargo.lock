@@ -443,6 +443,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "key_derives"
+version = "0.1.0"
+dependencies = [
+ "curve25519-dalek",
+ "monero-wallet",
+ "sha3",
+ "zeroize",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.177"
 source = "registry+https://github.com/rust-lang/crates.io-index"

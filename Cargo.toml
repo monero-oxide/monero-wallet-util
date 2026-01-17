@@ -8,8 +8,9 @@ members = [
   "epee/derive",
 
   "util",
+  "key_derives",
 
-  "tests/no-std",
+  "tests/no-std", 
 ]
 
 # Always compile Monero (and a variety of dependencies) with optimizations due
