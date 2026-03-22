@@ -16,9 +16,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 workspace = true
 
 [dependencies]
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
-zeroize = { version = "^1.5", default-features = false, features = ["alloc"] }
-
 wasm-bindgen = { version = "0.2", default-features = false }
 wasm-bindgen-futures = { version = "0.4", default-features = false }
 web-sys = { version = "0.3", default-features = false, features = ["Blob", "Request", "RequestInit", "Response", "Window"] }

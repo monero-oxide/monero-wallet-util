@@ -784,12 +784,10 @@ dependencies = [
 name = "monero-web-sys-rpc"
 version = "0.1.0"
 dependencies = [
- "hex",
  "monero-daemon-rpc",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "zeroize",
 ]
 
 [[package]]
