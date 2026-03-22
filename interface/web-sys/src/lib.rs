@@ -12,7 +12,7 @@ use alloc::{vec::Vec, string::String};
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{js_sys::Uint8Array, Blob, Request, RequestInit, Response};
+use web_sys::{js_sys::Uint8Array, Request, RequestInit, Response};
 
 pub use monero_daemon_rpc::prelude;
 use monero_daemon_rpc::{prelude::InterfaceError, HttpTransport, MoneroDaemon};
@@ -53,27 +53,30 @@ pub async fn __unsafe_internal_post(
   }
   let response: Response = response.dyn_into().expect("response type was just checked");
 
-  let blob = JsFuture::from(response.blob().map_err(|e| {
-    InterfaceError::InvalidInterface(format!("failed to fetch response's blob: {e:?}"))
-  })?)
+  // Check if response is OK
+  if !response.ok() {
+    return Err(InterfaceError::InvalidInterface(format!(
+      "HTTP error: {} {}",
+      response.status(),
+      response.status_text()
+    )));
+  }
+
+  // Get response as ArrayBuffer
+  let array_buffer = JsFuture::from(
+    response
+      .array_buffer()
+      .map_err(|e| InterfaceError::InternalError(format!("failed to get array buffer: {e:?}")))?,
+  )
   .await
-  .map_err(|e| {
-    InterfaceError::InvalidInterface(format!("failed to receive response's blob: {e:?}"))
-  })?;
-  if !blob.is_instance_of::<Blob>() {
-    Err(InterfaceError::InternalError("blob result wasn't a blob".to_string()))?;
-  }
-  let blob: Blob = blob.dyn_into().expect("blob type was just checked");
+  .map_err(|e| InterfaceError::InternalError(format!("failed to await array buffer: {e:?}")))?;
 
-  let uint8_array = JsFuture::from(blob.bytes()).await.map_err(|e| {
-    InterfaceError::InvalidInterface(format!("couldn't fetch bytes from blob: {e:?}"))
-  })?;
-  if !uint8_array.is_instance_of::<Uint8Array>() {
-    Err(InterfaceError::InternalError("bytes result wasn't a Uint8Array".to_string()))?;
-  }
-  let bytes: Uint8Array = uint8_array.dyn_into().expect("Uint8Array type was just checked");
+  // Convert ArrayBuffer to Uint8Array and then to Vec<u8>
+  let uint8_array = Uint8Array::new(&array_buffer);
+  let mut result = vec![0; uint8_array.length() as usize];
+  uint8_array.copy_to(&mut result);
 
-  Ok(bytes.to_vec())
+  Ok(result)
 }
 
 #[repr(transparent)]
