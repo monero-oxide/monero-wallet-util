@@ -15,6 +15,7 @@ These libraries are less often maintained, with less stability guarantees, than
 
 - [Monero Seed](seed)
 - [Polyseed](polyseed)
+- [`web-sys` Transport for `monero-daemon-rpc`](interface/web-sys)
 
 ### In Development
 
