@@ -25,13 +25,14 @@ pub struct WebSysTransport {
 
 impl WebSysTransport {
   /// Create a new RPC connection, using the web browser's HTTP APIs.
-  pub fn new(url: String) -> Result<MoneroDaemon<WebSysTransport>, InterfaceError> {
-    Ok(MoneroDaemon::new(WebSysTransport { url }))
+  pub fn new(
+    url: String,
+  ) -> impl Future<Output = Result<MoneroDaemon<WebSysTransport>, InterfaceError>> {
+    MoneroDaemon::new(WebSysTransport { url })
   }
 }
 
-#[doc(hidden)]
-pub async fn __unsafe_internal_post(
+async fn __unsafe_internal_post(
   url: &str,
   route: &str,
   body: Vec<u8>,
