@@ -14,6 +14,7 @@ fn test_polyseed() {
     has_accent: bool,
   }
 
+  #[allow(clippy::unicode_not_nfc, clippy::unreadable_literal)]
   let vectors = [
     Vector {
       language: Language::English,
@@ -141,7 +142,7 @@ fn test_polyseed() {
 
     let trim_seed = |seed: &str| {
       let seed_to_trim =
-        if vector.has_accent { seed_without_accents(seed) } else { seed.to_string() };
+        if vector.has_accent { seed_without_accents(seed) } else { seed.to_owned() };
       seed_to_trim
         .split_whitespace()
         .map(|w| {

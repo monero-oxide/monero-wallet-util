@@ -45,7 +45,7 @@ impl<T: 'static + Default + EpeeDecode, const N: usize> EpeeDecode for [T; N] {
         `u8: Copy`.
       */
       let casted =
-        unsafe { core::ptr::read_unaligned(core::ptr::addr_of!(original) as *const [T; N]) };
+        unsafe { core::ptr::read_unaligned(core::ptr::addr_of!(original).cast::<[T; N]>()) };
 
       return Ok(casted);
     }

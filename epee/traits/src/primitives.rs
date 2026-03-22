@@ -1,3 +1,5 @@
+#![allow(clippy::wildcard_enum_match_arm)]
+
 use crate::{BytesLike, EpeeError, Type, EpeeEntry, EpeeDecode};
 
 impl EpeeDecode for i8 {

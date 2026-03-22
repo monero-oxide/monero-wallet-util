@@ -40,17 +40,17 @@ async fn __unsafe_internal_post(
   let opts = RequestInit::new();
   opts.set_method("POST");
   opts.set_body(&Uint8Array::from(body.as_slice()).into());
-  let request = Request::new_with_str_and_init(&(url.to_string() + "/" + route), &opts)
+  let request = Request::new_with_str_and_init(&(url.to_owned() + "/" + route), &opts)
     .map_err(|e| InterfaceError::InternalError(format!("failed to create request: {e:?}")))?;
 
   let window = web_sys::window()
-    .ok_or_else(|| InterfaceError::InternalError("failed to acquire window".to_string()))?;
+    .ok_or_else(|| InterfaceError::InternalError("failed to acquire window".to_owned()))?;
 
   let response = JsFuture::from(window.fetch_with_request(&request)).await.map_err(|e| {
     InterfaceError::InvalidInterface(format!("failed to make request to RPC: {e:?}"))
   })?;
   if !response.is_instance_of::<Response>() {
-    Err(InterfaceError::InternalError("fetch result wasn't a response".to_string()))?;
+    Err(InterfaceError::InternalError("fetch result wasn't a response".to_owned()))?;
   }
   let response: Response = response.dyn_into().expect("response type was just checked");
 
@@ -74,7 +74,12 @@ async fn __unsafe_internal_post(
 
   // Convert ArrayBuffer to Uint8Array and then to Vec<u8>
   let uint8_array = Uint8Array::new(&array_buffer);
-  let mut result = vec![0; uint8_array.length() as usize];
+  let mut result = vec![
+    0;
+    usize::try_from(uint8_array.length()).map_err(|_| {
+      InterfaceError::InternalError("received array of length exceeding `usize`".to_owned())
+    })?
+  ];
   uint8_array.copy_to(&mut result);
 
   Ok(result)

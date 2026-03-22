@@ -8,7 +8,7 @@ use std_shims::{sync::LazyLock, string::String, collections::HashMap};
 #[cfg(feature = "std")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use subtle::ConstantTimeEq;
+use subtle::ConstantTimeEq as _;
 use zeroize::{Zeroize, Zeroizing, ZeroizeOnDrop};
 use rand_core::{RngCore, CryptoRng};
 
@@ -39,8 +39,8 @@ fn polyseed_features_supported(features: u8) -> bool {
 // Dates
 const DATE_BITS: u8 = 10;
 const DATE_MASK: u16 = (1u16 << DATE_BITS) - 1;
-const POLYSEED_EPOCH: u64 = 1635768000; // 1st November 2021 12:00 UTC
-const TIME_STEP: u64 = 2629746; // 30.436875 days = 1/12 of the Gregorian year
+const POLYSEED_EPOCH: u64 = 1_635_768_000; // 1st November 2021 12:00 UTC
+const TIME_STEP: u64 = 2_629_746; // 30.436875 days = 1/12 of the Gregorian year
 
 // After ~85 years, this will roll over.
 fn birthday_encode(time: u64) -> u16 {
@@ -62,7 +62,7 @@ const CLEAR_BITS: usize = (SECRET_SIZE * BITS_PER_BYTE) - SECRET_BITS; // 2
 // Polyseed calls this CLEAR_MASK and has a very complicated formula for this fundamental
 // equivalency
 #[allow(clippy::cast_possible_truncation)]
-const LAST_BYTE_SECRET_BITS_MASK: u8 = ((1 << (BITS_PER_BYTE - CLEAR_BITS)) - 1) as u8;
+const LAST_BYTE_SECRET_BITS_MASK: u8 = (1 << (BITS_PER_BYTE - CLEAR_BITS)) - 1;
 
 const SECRET_BITS_PER_WORD: usize = 10;
 
@@ -163,6 +163,7 @@ impl WordList {
   }
 }
 
+#[allow(clippy::unicode_not_nfc)]
 static LANGUAGES: LazyLock<HashMap<Language, WordList>> = LazyLock::new(|| {
   HashMap::from([
     (Language::Czech, WordList::new(include!("./words/cs.rs"), true, false)),

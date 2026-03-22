@@ -3,15 +3,14 @@
 #![deny(missing_docs)]
 #![no_std]
 
-use core::{borrow::Borrow, str::FromStr, iter::Peekable};
+use core::{borrow::Borrow, fmt::Write as _, str::FromStr as _, iter::Peekable};
 
 extern crate alloc;
 use alloc::{
-  string::{String, ToString},
+  string::{String, ToString as _},
   vec, format,
 };
 
-extern crate proc_macro;
 use proc_macro::{Delimiter, Spacing, Punct, TokenTree, TokenStream};
 
 // `<` will not open a group, so we use this to take all items within a `< ... >` expression.
@@ -121,6 +120,7 @@ pub fn derive_epee_decode(object: TokenStream) -> TokenStream {
     // Ensure this is terminated, which it won't be if the last item had bounds yet didn't have a
     // trailing comma
     if let Some(last) = generics_tree.last() {
+      #[allow(clippy::wildcard_enum_match_arm)]
       match last {
         TokenTree::Punct(punct) if punct.as_char() == '>' => {}
         _ => generics_tree.push(TokenTree::Punct(Punct::new('>', Spacing::Alone))),
@@ -134,9 +134,10 @@ pub fn derive_epee_decode(object: TokenStream) -> TokenStream {
     let Some(TokenTree::Group(struct_body)) = object.next() else {
       panic!("`struct`'s name was not followed by its body");
     };
-    if struct_body.delimiter() != Delimiter::Brace {
-      panic!("`EpeeDecode` derivation applied to `struct` with anonymous fields");
-    }
+    assert!(
+      struct_body.delimiter() == Delimiter::Brace,
+      "`EpeeDecode` derivation applied to `struct` with anonymous fields",
+    );
     let mut struct_body = struct_body.stream().into_iter().peekable();
     // Read each field within this `struct`'s body
     while struct_body.peek().is_some() {
@@ -157,11 +158,13 @@ pub fn derive_epee_decode(object: TokenStream) -> TokenStream {
       let field_name = field_name.expect("couldn't find the name of the field within the `struct`");
       largest_key = largest_key.max(field_name.len());
 
-      all_fields.push_str(&format!(
+      write!(
+        &mut all_fields,
         r#"
         b"{field_name}" => result.{field_name} = monero_epee_traits::EpeeDecode::decode(value)?,
       "#
-      ));
+      )
+      .expect("`write!` to `String` is infallible");
 
       // Advance to the next field
       skip_comma_delimited(&mut struct_body);

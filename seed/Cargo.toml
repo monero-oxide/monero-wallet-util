@@ -6,7 +6,7 @@ license = "MIT"
 repository = "https://github.com/monero-oxide/monero-wallet-util/tree/main/seed"
 authors = ["Luke Parker <lukeparker5132@gmail.com>"]
 edition = "2021"
-rust-version = "1.68"
+rust-version = "1.71"
 
 [package.metadata.docs.rs]
 all-features = true

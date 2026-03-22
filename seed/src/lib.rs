@@ -3,14 +3,10 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use core::{ops::Deref, fmt};
-use std_shims::{
-  sync::LazyLock,
-  vec,
-  vec::Vec,
-  string::{String, ToString},
-  collections::HashMap,
-};
+use core::{ops::Deref as _, fmt};
+#[allow(unused)]
+use std_shims::prelude::*;
+use std_shims::{sync::LazyLock, vec, vec::Vec, string::String, collections::HashMap};
 
 use zeroize::{Zeroize, Zeroizing};
 use rand_core::{RngCore, CryptoRng};
@@ -77,6 +73,7 @@ fn trim(word: &str, len: usize) -> Zeroizing<String> {
   Zeroizing::new(word.chars().take(len).collect())
 }
 
+#[allow(clippy::struct_field_names)]
 struct WordList {
   word_list: &'static [&'static str],
   word_map: HashMap<&'static str, usize>,
@@ -126,13 +123,15 @@ fn checksum_index(words: &[Zeroizing<String>], lang: &WordList) -> usize {
     *trimmed_words += &trim(w, lang.unique_prefix_length);
   }
 
+  #[allow(clippy::as_conversions)]
   const fn crc32_table() -> [u32; 256] {
-    let poly = 0xedb88320u32;
+    let poly = 0xedb8_8320_u32;
 
     let mut res = [0; 256];
-    let mut i = 0;
-    while i < 256 {
-      let mut entry = i;
+    let mut i = 0u8;
+    loop {
+      // `u8` -> `u32`
+      let mut entry = i as u32;
       let mut b = 0;
       while b < 8 {
         let trigger = entry & 1;
@@ -142,7 +141,12 @@ fn checksum_index(words: &[Zeroizing<String>], lang: &WordList) -> usize {
         }
         b += 1;
       }
-      res[i as usize] = entry;
+      // `u8` -> `usize`
+      let index = i as usize;
+      res[index] = entry;
+      if index == (res.len() - 1) {
+        break;
+      }
       i += 1;
     }
 
@@ -192,7 +196,7 @@ fn key_to_seed(lang: Language, key: Zeroizing<Scalar>) -> Seed {
     // append words to seed
     for i in indices.iter().skip(1) {
       let word = usize::try_from(i % list_len).unwrap();
-      seed.push(Zeroizing::new(words[word].to_string()));
+      seed.push(Zeroizing::new(words[word].to_owned()));
     }
   }
   segment.zeroize();
@@ -217,7 +221,7 @@ fn key_to_seed(lang: Language, key: Zeroizing<Scalar>) -> Seed {
 // Convert a seed to bytes
 fn seed_to_bytes(lang: Language, words: &str) -> Result<Zeroizing<[u8; 32]>, SeedError> {
   // get seed words
-  let words = words.split_whitespace().map(|w| Zeroizing::new(w.to_string())).collect::<Vec<_>>();
+  let words = words.split_whitespace().map(|w| Zeroizing::new(w.to_owned())).collect::<Vec<_>>();
   if (words.len() != SEED_LENGTH) && (words.len() != SEED_LENGTH_WITH_CHECKSUM) {
     Err(SeedError::InvalidSeed)?;
   }

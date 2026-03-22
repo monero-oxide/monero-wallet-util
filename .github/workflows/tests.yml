@@ -18,7 +18,7 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # 6.0.0
 
       - name: Test Dependencies
         uses: ./.github/actions/test-dependencies
@@ -57,10 +57,10 @@ jobs:
     # Test against all supported protocol versions
     strategy:
       matrix:
-        version: [v0.17.3.2, v0.18.4.4]
+        version: [v0.17.3.2, v0.18.4.6]
 
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # 6.0.0
 
       - name: Test Dependencies
         uses: ./.github/actions/test-dependencies
