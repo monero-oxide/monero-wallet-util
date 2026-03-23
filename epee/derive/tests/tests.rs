@@ -1,6 +1,9 @@
+//! Tests for the public API of `monero-epee-derive`.
+
 use monero_epee_traits::EpeeDecode;
 use monero_epee_derive::EpeeDecode;
 
+#[allow(clippy::partial_pub_fields)]
 #[derive(PartialEq, Debug, Default, EpeeDecode)]
 struct MyStruct<T: 'static + core::fmt::Debug + Default + EpeeDecode> {
   pub abc: u64,
@@ -23,6 +26,7 @@ struct WithoutT {
 fn test_derive() {
   use monero_epee_traits::*;
 
+  #[allow(clippy::unreadable_literal)]
   let res = MyStruct {
     abc: 0xd07bc37ed42c062d,
     de: 0xdd,
@@ -51,6 +55,7 @@ fn test_derive() {
     missing: None,
   };
 
+  #[allow(clippy::as_conversions)]
   let encoding = [
     HEADER.as_slice(),
     &[VERSION],

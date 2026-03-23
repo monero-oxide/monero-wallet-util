@@ -1,0 +1,6 @@
+allow-one-hash-in-raw-strings = true
+
+[[disallowed-methods]]
+path = "Option::map_or"
+[[disallowed-methods]]
+path = "Option::map_or_else"

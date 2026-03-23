@@ -185,7 +185,7 @@ fn test_original_seed() {
       if lang != Language::DeprecatedEnglish {
         word.chars().take(LANGUAGES[&lang].unique_prefix_length).collect()
       } else {
-        word.to_string()
+        word.to_owned()
       }
     }
 
