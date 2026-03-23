@@ -4,13 +4,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "monero-oxide/**"
-
   pull_request:
-    paths:
-      - "monero-oxide/**"
-
   workflow_dispatch:
 
 jobs:
