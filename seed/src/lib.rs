@@ -271,31 +271,31 @@ fn seed_to_bytes(lang: Language, words: &str) -> Result<Zeroizing<[u8; 32]>, See
 
   // convert to bytes
   let mut res = Zeroizing::new([0; 32]);
-  let mut indices = Zeroizing::new([0; 4]);
+  // Use fixed u64 accumulators so overflow rejection behaves identically on 32-bit and 64-bit
+  // targets.
+  let mut indices = Zeroizing::new([0u64; 4]);
+  let list_len = u64::try_from(lang_word_list.word_list.len()).unwrap();
   for i in 0 .. 8 {
     // read 3 indices at a time
     let i3 = i * 3;
-    indices[1] = matched_indices[i3];
-    indices[2] = matched_indices[i3 + 1];
-    indices[3] = matched_indices[i3 + 2];
+    indices[1] = u64::try_from(matched_indices[i3]).unwrap();
+    indices[2] = u64::try_from(matched_indices[i3 + 1]).unwrap();
+    indices[3] = u64::try_from(matched_indices[i3 + 2]).unwrap();
 
-    let inner = |i| {
-      let mut base = (lang_word_list.word_list.len() - indices[i] + indices[i + 1]) %
-        lang_word_list.word_list.len();
+    let inner = |i: usize| {
+      let mut base = (list_len - indices[i] + indices[i + 1]) % list_len;
       // Shift the index over
       for _ in 0 .. i {
-        base *= lang_word_list.word_list.len();
+        base *= list_len;
       }
       base
     };
     // set the last index
     indices[0] = indices[1] + inner(1) + inner(2);
-    if (indices[0] % lang_word_list.word_list.len()) != indices[1] {
-      Err(SeedError::InvalidSeed)?;
-    }
 
+    let word = u32::try_from(indices[0]).map_err(|_| SeedError::InvalidSeed)?;
     let pos = i * 4;
-    let mut bytes = u32::try_from(indices[0]).unwrap().to_le_bytes();
+    let mut bytes = word.to_le_bytes();
     res[pos .. (pos + 4)].copy_from_slice(&bytes);
     bytes.zeroize();
   }
