@@ -117,6 +117,25 @@ static LANGUAGES: LazyLock<HashMap<Language, WordList>> = LazyLock::new(|| {
   ])
 });
 
+// Language detection order matching Monero's `find_seed_language`
+// (`src/mnemonics/electrum-words.cpp`). Prefix sets overlap across languages,
+// so iterating in a fixed order keeps detection deterministic across runs.
+const LANGUAGE_ORDER: [Language; 13] = [
+  Language::Chinese,
+  Language::English,
+  Language::Dutch,
+  Language::French,
+  Language::Spanish,
+  Language::German,
+  Language::Italian,
+  Language::Portuguese,
+  Language::Japanese,
+  Language::Russian,
+  Language::Esperanto,
+  Language::Lojban,
+  Language::DeprecatedEnglish,
+];
+
 fn checksum_index(words: &[Zeroizing<String>], lang: &WordList) -> usize {
   let mut trimmed_words = Zeroizing::new(String::new());
   for w in words {
@@ -336,6 +355,58 @@ impl Seed {
 
     // Call from_entropy so a trimmed seed becomes a full seed
     Ok(Self::from_entropy(lang, entropy).unwrap())
+  }
+
+  /// Parse a seed from a string, automatically detecting its language.
+  ///
+  /// Words, and prefixes of words, are shared across wordlists, so this follows Monero's
+  /// `find_seed_language`. Languages are tried in Monero's order, and the first language which
+  /// contains every word, and whose checksum is valid (if a checksum is present), is the seed's
+  /// language. If the words do not decode to a valid seed in that language, later languages are
+  /// not considered, as the result would not be the seed Monero recovers from this mnemonic.
+  #[allow(clippy::needless_pass_by_value)]
+  pub fn from_string_auto(words: Zeroizing<String>) -> Result<Seed, SeedError> {
+    let word_count = words.split_whitespace().take(SEED_LENGTH_WITH_CHECKSUM + 1).count();
+    if (word_count != SEED_LENGTH) && (word_count != SEED_LENGTH_WITH_CHECKSUM) {
+      Err(SeedError::InvalidSeed)?;
+    }
+    let has_checksum = word_count == SEED_LENGTH_WITH_CHECKSUM;
+
+    // The error to return if no language is selected
+    let mut error = SeedError::InvalidSeed;
+    for lang in LANGUAGE_ORDER {
+      let word_list = &LANGUAGES[&lang];
+      let contains_every_word = words.split_whitespace().all(|word| {
+        if has_checksum {
+          word_list
+            .trimmed_word_map
+            .contains_key(trim(word, word_list.unique_prefix_length).deref())
+        } else {
+          word_list.word_map.contains_key(word)
+        }
+      });
+      if !contains_every_word {
+        continue;
+      }
+
+      match Self::from_string(lang, words.clone()) {
+        // The words also exist in this language, yet the checksum is for another language (or
+        // the seed was mistyped)
+        Err(SeedError::InvalidChecksum) => error = SeedError::InvalidChecksum,
+        Err(SeedError::DeprecatedEnglishWithChecksum) => {
+          if error == SeedError::InvalidSeed {
+            error = SeedError::DeprecatedEnglishWithChecksum;
+          }
+        }
+        res @ (Ok(_) | Err(SeedError::InvalidSeed)) => return res,
+      }
+    }
+    Err(error)
+  }
+
+  /// Return the language of this seed.
+  pub fn language(&self) -> Language {
+    self.0
   }
 
   /// Create a seed from entropy.

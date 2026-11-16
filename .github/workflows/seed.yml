@@ -1,0 +1,17 @@
+name: Seed checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # 6.0.0
+      - run: cargo test --locked -p monero-seed --all-features
+      - run: rustup target add riscv32imac-unknown-none-elf wasm32-unknown-unknown
+      - run: cargo check --locked -p monero-seed --no-default-features --target riscv32imac-unknown-none-elf
+      - run: cargo check --locked -p monero-seed --no-default-features --target wasm32-unknown-unknown
