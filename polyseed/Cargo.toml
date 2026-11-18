@@ -21,11 +21,13 @@ std-shims = { version = "0.1.4", default-features = false }
 thiserror = { version = "1", default-features = false, optional = true }
 
 subtle = { version = "2.4", default-features = false }
-zeroize = { version = "1.5", default-features = false, features = ["zeroize_derive"] }
+zeroize = { version = "1.5", default-features = false, features = ["alloc", "zeroize_derive"] }
 rand_core = { version = "0.6", default-features = false }
 
 sha2 = { version = "0.10", default-features = false }
 pbkdf2 = { version = "0.12", features = ["simple"], default-features = false }
+
+unicode-normalization = { version = "0.1", default-features = false }
 
 [dev-dependencies]
 hex = { version = "0.4", default-features = false, features = ["std"] }

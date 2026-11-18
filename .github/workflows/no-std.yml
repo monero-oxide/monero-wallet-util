@@ -5,17 +5,32 @@ on:
     branches:
       - main
     paths:
+      - "polyseed/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/no-std.yml"
       - "monero-oxide/**"
       - "tests/no-std/**"
 
   pull_request:
     paths:
+      - "polyseed/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/no-std.yml"
       - "monero-oxide/**"
       - "tests/no-std/**"
 
   workflow_dispatch:
 
 jobs:
+  polyseed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # 6.0.0
+      # Build alone so another workspace member cannot enable zeroize/alloc for us.
+      - run: cargo check --locked -p polyseed --no-default-features
+
   build:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,19 @@
+name: Polyseed checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # 6.0.0
+      # Include integration tests; the workspace unit-test job only uses --lib.
+      - run: cargo test --locked -p polyseed --all-features
+      - run: rustup target add riscv32imac-unknown-none-elf wasm32-unknown-unknown
+      # Build the crate alone so workspace feature unification cannot mask gaps.
+      - run: cargo check --locked -p polyseed --no-default-features --target riscv32imac-unknown-none-elf
+      - run: cargo check --locked -p polyseed --no-default-features --target wasm32-unknown-unknown

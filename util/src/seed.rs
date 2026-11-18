@@ -41,11 +41,18 @@ impl From<OriginalSeedError> for SeedError {
 
 impl From<PolyseedError> for SeedError {
   fn from(error: PolyseedError) -> SeedError {
+    // `PolyseedError` is non-exhaustive, requiring the wildcard. The variants which currently
+    // exist are still listed so `clippy::wildcard_enum_match_arm` identifies any added later.
+    #[allow(clippy::match_same_arms)]
     match error {
       PolyseedError::UnsupportedFeatures => SeedError::UnsupportedFeatures,
       PolyseedError::InvalidEntropy => SeedError::InvalidEntropy,
-      PolyseedError::InvalidSeed => SeedError::InvalidSeed,
       PolyseedError::InvalidChecksum => SeedError::InvalidChecksum,
+      PolyseedError::InvalidSeed |
+      PolyseedError::InvalidWordCount |
+      PolyseedError::MultipleLanguagesMatch |
+      PolyseedError::InvalidFormat => SeedError::InvalidSeed,
+      _ => SeedError::InvalidSeed,
     }
   }
 }
