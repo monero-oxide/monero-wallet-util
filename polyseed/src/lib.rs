@@ -107,6 +107,7 @@ const COIN: u16 = 0;
 
 /// An error when working with a Polyseed.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[non_exhaustive]
 #[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum PolyseedError {
   /// The seed was invalid.
@@ -121,6 +122,9 @@ pub enum PolyseedError {
   /// Unsupported feature bits were set.
   #[cfg_attr(feature = "std", error("unsupported features"))]
   UnsupportedFeatures,
+  /// The mnemonic had an invalid word count.
+  #[cfg_attr(feature = "std", error("invalid word count"))]
+  InvalidWordCount,
 }
 
 /// Language options for Polyseed.
@@ -310,12 +314,16 @@ impl Polyseed {
   /// Create a new `Polyseed` from a String.
   #[allow(clippy::needless_pass_by_value)]
   pub fn from_string(lang: Language, seed: Zeroizing<String>) -> Result<Polyseed, PolyseedError> {
+    let words = seed.split_whitespace();
+    if words.clone().take(POLYSEED_LENGTH + 1).count() != POLYSEED_LENGTH {
+      return Err(PolyseedError::InvalidWordCount);
+    }
     // Decode the seed into its polynomial coefficients
     let mut poly = [0; POLYSEED_LENGTH];
 
     // Validate words are in the lang word list
     let lang_word_list: &WordList = &LANGUAGES[&lang];
-    for (i, word) in seed.split_whitespace().enumerate() {
+    for (i, word) in words.enumerate() {
       // Find the word's index
       fn check_if_matches<S: AsRef<str>, I: Iterator<Item = S>>(
         has_prefix: bool,
