@@ -126,6 +126,9 @@ pub enum PolyseedError {
   /// The mnemonic had an invalid word count.
   #[cfg_attr(feature = "std", error("invalid word count"))]
   InvalidWordCount,
+  /// More than one language matched the mnemonic.
+  #[cfg_attr(feature = "std", error("multiple languages match"))]
+  MultipleLanguagesMatch,
 }
 
 /// Language options for Polyseed.
@@ -152,6 +155,19 @@ pub enum Language {
   /// Traditional Chinese language option.
   ChineseTraditional,
 }
+
+const ALL_LANGUAGES: [Language; 10] = [
+  Language::English,
+  Language::Spanish,
+  Language::French,
+  Language::Italian,
+  Language::Japanese,
+  Language::Korean,
+  Language::Czech,
+  Language::Portuguese,
+  Language::ChineseSimplified,
+  Language::ChineseTraditional,
+];
 
 struct WordList {
   words: &'static [&'static str],
@@ -447,9 +463,55 @@ impl Polyseed {
     res
   }
 
+  /// Create a new `Polyseed` from a String, automatically detecting the language.
+  ///
+  /// The mnemonic must decode, with a valid checksum, in exactly one language. Wordlists share
+  /// words (the Chinese wordlists especially), so a mnemonic which decodes in several languages
+  /// is rejected with `MultipleLanguagesMatch` and has to be parsed with
+  /// [`Polyseed::from_string`]. This is more lenient than the reference implementation, which
+  /// rejects any mnemonic whose words are all present in several wordlists, even when its
+  /// checksum is only valid for one of them.
+  ///
+  /// If no language decodes the mnemonic, the error is from the language which got the furthest:
+  /// `UnsupportedFeatures`, else `InvalidChecksum`, else `InvalidSeed`.
+  #[allow(clippy::needless_pass_by_value)]
+  pub fn from_string_auto(seed: Zeroizing<String>) -> Result<(Polyseed, Language), PolyseedError> {
+    let mut result = None;
+    let mut error = PolyseedError::InvalidSeed;
+    for lang in ALL_LANGUAGES {
+      match Self::from_string(lang, seed.clone()) {
+        Ok(decoded) => {
+          if result.is_some() {
+            Err(PolyseedError::MultipleLanguagesMatch)?;
+          }
+          result = Some((decoded, lang));
+        }
+        // The word count is independent of the language
+        Err(PolyseedError::InvalidWordCount) => Err(PolyseedError::InvalidWordCount)?,
+        Err(PolyseedError::UnsupportedFeatures) => error = PolyseedError::UnsupportedFeatures,
+        Err(PolyseedError::InvalidChecksum) => {
+          if error == PolyseedError::InvalidSeed {
+            error = PolyseedError::InvalidChecksum;
+          }
+        }
+        Err(
+          PolyseedError::InvalidSeed |
+          PolyseedError::InvalidEntropy |
+          PolyseedError::MultipleLanguagesMatch,
+        ) => {}
+      }
+    }
+    result.ok_or(error)
+  }
+
   /// When this seed was created, defined in seconds since the epoch.
   pub fn birthday(&self) -> u64 {
     birthday_decode(self.birthday)
+  }
+
+  /// Return the language of this seed.
+  pub fn language(&self) -> Language {
+    self.language
   }
 
   /// This seed's features.

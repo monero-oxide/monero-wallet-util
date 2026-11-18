@@ -48,7 +48,9 @@ impl From<PolyseedError> for SeedError {
       PolyseedError::UnsupportedFeatures => SeedError::UnsupportedFeatures,
       PolyseedError::InvalidEntropy => SeedError::InvalidEntropy,
       PolyseedError::InvalidChecksum => SeedError::InvalidChecksum,
-      PolyseedError::InvalidSeed | PolyseedError::InvalidWordCount => SeedError::InvalidSeed,
+      PolyseedError::InvalidSeed |
+      PolyseedError::InvalidWordCount |
+      PolyseedError::MultipleLanguagesMatch => SeedError::InvalidSeed,
       _ => SeedError::InvalidSeed,
     }
   }
