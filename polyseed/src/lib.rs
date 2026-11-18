@@ -33,8 +33,13 @@ fn user_features(features: u8) -> u8 {
   features & USER_FEATURES_MASK
 }
 
-fn polyseed_features_supported(features: u8) -> bool {
-  (features & RESERVED_FEATURES_MASK) == 0
+fn polyseed_features_supported(features: u8, enabled: u8) -> bool {
+  (features & (RESERVED_FEATURES_MASK & !(enabled & USER_FEATURES_MASK))) == 0
+}
+
+/// Get the value of specific user feature bits from a seed's features.
+pub fn get_feature(features: u8, mask: u8) -> u8 {
+  features & (mask & USER_FEATURES_MASK)
 }
 
 // Dates
@@ -109,10 +114,26 @@ const STORAGE_FOOTER: u16 = 0x7000;
 const GF_MASK: u16 = (1u16 << GF_BITS) - 1;
 const FEATURE_MASK: u8 = (1u8 << FEATURE_BITS) - 1;
 
-// Polyseed technically supports multiple coins, and the value for Monero is 0
-// See: https://github.com/tevador/polyseed/blob/dfb05d8edb682b0e8f743b1b70c9131712ff4157
-//   /include/polyseed.h#L57
-const COIN: u16 = 0;
+/// Coin types supported by Polyseed.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Zeroize)]
+pub enum Coin {
+  /// Monero.
+  Monero,
+  /// Aeon.
+  Aeon,
+  /// Wownero.
+  Wownero,
+}
+
+impl Coin {
+  fn to_raw(self) -> u16 {
+    match self {
+      Coin::Monero => 0,
+      Coin::Aeon => 1,
+      Coin::Wownero => 2,
+    }
+  }
+}
 
 /// An error when working with a Polyseed.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -287,8 +308,9 @@ impl Polyseed {
     masked_features: u8,
     encoded_birthday: u16,
     entropy: Zeroizing<[u8; 32]>,
+    enabled_features: u8,
   ) -> Result<Polyseed, PolyseedError> {
-    if !polyseed_features_supported(masked_features) {
+    if !polyseed_features_supported(masked_features, enabled_features) {
       Err(PolyseedError::UnsupportedFeatures)?;
     }
 
@@ -310,13 +332,31 @@ impl Polyseed {
   /// Create a new `Polyseed` with specific internals.
   ///
   /// `birthday` is defined in seconds since the epoch.
+  ///
+  /// User features are rejected with `UnsupportedFeatures`. To create a seed with user features,
+  /// use [`Polyseed::from_with_features`].
   pub fn from(
     language: Language,
     features: u8,
     birthday: u64,
     entropy: Zeroizing<[u8; 32]>,
   ) -> Result<Polyseed, PolyseedError> {
-    Self::from_internal(language, user_features(features), birthday_encode(birthday), entropy)
+    Self::from_internal(language, user_features(features), birthday_encode(birthday), entropy, 0)
+  }
+
+  /// Create a new `Polyseed` with user feature bits set.
+  ///
+  /// Only the low three bits of `features` are user features, with the rest being ignored. Their
+  /// meaning is up to the caller, who has to enable them again in order to parse or load the
+  /// seed, as seeds with features which weren't enabled are rejected.
+  pub fn from_with_features(
+    language: Language,
+    features: u8,
+    birthday: u64,
+    entropy: Zeroizing<[u8; 32]>,
+  ) -> Result<Polyseed, PolyseedError> {
+    let features = user_features(features);
+    Self::from_internal(language, features, birthday_encode(birthday), entropy, features)
   }
 
   /// Create a new `Polyseed`.
@@ -355,6 +395,19 @@ impl Polyseed {
   /// Create a new `Polyseed` from a String.
   #[allow(clippy::needless_pass_by_value)]
   pub fn from_string(lang: Language, seed: Zeroizing<String>) -> Result<Polyseed, PolyseedError> {
+    Self::from_string_with_options(lang, seed, Coin::Monero, 0)
+  }
+
+  /// Parse a mnemonic for a specific coin and set of understood user features.
+  ///
+  /// Unsupported feature bits are rejected even if the checksum is valid.
+  #[allow(clippy::needless_pass_by_value)]
+  pub fn from_string_with_options(
+    lang: Language,
+    seed: Zeroizing<String>,
+    coin: Coin,
+    enabled_features: u8,
+  ) -> Result<Polyseed, PolyseedError> {
     let normalized = Zeroizing::new(seed.nfkd().collect::<String>());
     let words = normalized.split_whitespace();
     if words.clone().take(POLYSEED_LENGTH + 1).count() != POLYSEED_LENGTH {
@@ -418,7 +471,7 @@ impl Polyseed {
     }
 
     // xor out the coin
-    poly[POLY_NUM_CHECK_DIGITS] ^= COIN;
+    poly[POLY_NUM_CHECK_DIGITS] ^= coin.to_raw();
 
     // Validate the checksum
     if poly_eval(&poly) != 0 {
@@ -467,7 +520,7 @@ impl Polyseed {
     let features =
       u8::try_from(extra >> DATE_BITS).expect("couldn't convert extra >> DATE_BITS to u8");
 
-    let res = Self::from_internal(lang, features, birthday, entropy);
+    let res = Self::from_internal(lang, features, birthday, entropy, enabled_features);
     if let Ok(res) = res.as_ref() {
       debug_assert_eq!(res.checksum, checksum);
     }
@@ -487,10 +540,22 @@ impl Polyseed {
   /// `UnsupportedFeatures`, else `InvalidChecksum`, else `InvalidSeed`.
   #[allow(clippy::needless_pass_by_value)]
   pub fn from_string_auto(seed: Zeroizing<String>) -> Result<(Polyseed, Language), PolyseedError> {
+    Self::from_string_auto_with_options(seed, Coin::Monero, 0)
+  }
+
+  /// Detect the language of a mnemonic for a specific coin and set of understood user features.
+  ///
+  /// Languages are selected as described for [`Polyseed::from_string_auto`].
+  #[allow(clippy::needless_pass_by_value)]
+  pub fn from_string_auto_with_options(
+    seed: Zeroizing<String>,
+    coin: Coin,
+    enabled_features: u8,
+  ) -> Result<(Polyseed, Language), PolyseedError> {
     let mut result = None;
     let mut error = PolyseedError::InvalidSeed;
     for lang in ALL_LANGUAGES {
-      match Self::from_string(lang, seed.clone()) {
+      match Self::from_string_with_options(lang, seed.clone(), coin, enabled_features) {
         Ok(decoded) => {
           if result.is_some() {
             Err(PolyseedError::MultipleLanguagesMatch)?;
@@ -567,26 +632,37 @@ impl Polyseed {
 
   /// The key derived from this seed.
   pub fn key(&self) -> Zeroizing<[u8; 32]> {
+    self.key_for_coin(Coin::Monero)
+  }
+
+  /// Derive this seed's key in the specified coin's domain.
+  pub fn key_for_coin(&self, coin: Coin) -> Zeroizing<[u8; 32]> {
     let mut key = Zeroizing::new([0u8; 32]);
     let mut salt = [0u8; 32];
     salt[.. 12].copy_from_slice(POLYSEED_SALT);
     salt[13] = 0xFF;
     salt[14] = 0xFF;
     salt[15] = 0xFF;
+    salt[16 .. 20].copy_from_slice(&u32::from(coin.to_raw()).to_le_bytes());
     salt[20 .. 24].copy_from_slice(&u32::from(self.birthday).to_le_bytes());
-    salt[24] = self.features;
+    salt[24 .. 28].copy_from_slice(&u32::from(self.features).to_le_bytes());
     pbkdf2_hmac::<Sha256>(self.entropy.as_slice(), &salt, POLYSEED_KEYGEN_ITERATIONS, key.as_mut());
     key
   }
 
   /// The String representation of this seed.
   pub fn to_string(&self) -> Zeroizing<String> {
+    self.to_string_for_coin(Coin::Monero)
+  }
+
+  /// Encode this seed as a mnemonic for the specified coin.
+  pub fn to_string_for_coin(&self, coin: Coin) -> Zeroizing<String> {
     // Encode the polynomial with the existing checksum
     let mut poly = self.to_poly();
     poly[0] = self.checksum;
 
     // Embed the coin
-    poly[POLY_NUM_CHECK_DIGITS] ^= COIN;
+    poly[POLY_NUM_CHECK_DIGITS] ^= coin.to_raw();
 
     // Output words
     let mut seed = Zeroizing::new(String::new());
@@ -625,6 +701,15 @@ impl Polyseed {
 
   /// Deserialize a seed from a 32-byte binary format. Accepts encrypted seeds.
   pub fn load(storage: &[u8; 32], language: Language) -> Result<Polyseed, PolyseedError> {
+    Self::load_with_features(storage, language, 0)
+  }
+
+  /// Load a binary seed while allowing only understood user feature bits.
+  pub fn load_with_features(
+    storage: &[u8; 32],
+    language: Language,
+    enabled_features: u8,
+  ) -> Result<Polyseed, PolyseedError> {
     if storage[.. 8] != *STORAGE_HEADER {
       return Err(PolyseedError::InvalidFormat);
     }
@@ -663,7 +748,7 @@ impl Polyseed {
     }
 
     // As with mnemonics, only reject the features once the checksum is known to be valid
-    if !polyseed_features_supported(features) {
+    if !polyseed_features_supported(features, enabled_features) {
       return Err(PolyseedError::UnsupportedFeatures);
     }
 
