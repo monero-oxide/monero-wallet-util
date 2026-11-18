@@ -14,6 +14,7 @@ use rand_core::{RngCore, CryptoRng};
 
 use sha2::Sha256;
 use pbkdf2::pbkdf2_hmac;
+use unicode_normalization::UnicodeNormalization as _;
 
 #[cfg(test)]
 mod tests;
@@ -314,7 +315,8 @@ impl Polyseed {
   /// Create a new `Polyseed` from a String.
   #[allow(clippy::needless_pass_by_value)]
   pub fn from_string(lang: Language, seed: Zeroizing<String>) -> Result<Polyseed, PolyseedError> {
-    let words = seed.split_whitespace();
+    let normalized = Zeroizing::new(seed.nfkd().collect::<String>());
+    let words = normalized.split_whitespace();
     if words.clone().take(POLYSEED_LENGTH + 1).count() != POLYSEED_LENGTH {
       return Err(PolyseedError::InvalidWordCount);
     }
@@ -358,7 +360,8 @@ impl Polyseed {
       }
 
       let Some(coeff) = (if lang_word_list.has_accent {
-        let ascii = |word: &str| word.chars().filter(char::is_ascii).collect::<String>();
+        let ascii =
+          |word: &str| Zeroizing::new(word.nfkd().filter(char::is_ascii).collect::<String>());
         check_if_matches(
           lang_word_list.has_prefix,
           lang_word_list.words.iter().map(|lang_word| ascii(lang_word)),
@@ -475,10 +478,16 @@ impl Polyseed {
     for i in 0 .. poly.len() {
       seed.push_str(words[usize::from(poly[i])]);
       if i < poly.len() - 1 {
-        seed.push(' ');
+        seed.push_str(if self.language == Language::Japanese { "\u{3000}" } else { " " });
       }
     }
 
+    if matches!(
+      self.language,
+      Language::French | Language::Spanish | Language::Japanese | Language::Korean
+    ) {
+      return Zeroizing::new(seed.nfc().collect());
+    }
     seed
   }
 }
