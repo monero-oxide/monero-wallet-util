@@ -50,7 +50,8 @@ impl From<PolyseedError> for SeedError {
       PolyseedError::InvalidChecksum => SeedError::InvalidChecksum,
       PolyseedError::InvalidSeed |
       PolyseedError::InvalidWordCount |
-      PolyseedError::MultipleLanguagesMatch => SeedError::InvalidSeed,
+      PolyseedError::MultipleLanguagesMatch |
+      PolyseedError::InvalidFormat => SeedError::InvalidSeed,
       _ => SeedError::InvalidSeed,
     }
   }

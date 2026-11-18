@@ -102,6 +102,13 @@ const POLYSEED_SALT: &[u8] = b"POLYSEED key";
 const POLYSEED_KEYGEN_ITERATIONS: u32 = 10000;
 const POLYSEED_CRYPT_ITERATIONS: u32 = 10000;
 
+// Binary storage parameters
+const STORAGE_HEADER: &[u8; 8] = b"POLYSEED";
+const STORAGE_EXTRA_BYTE: u8 = 0xFF;
+const STORAGE_FOOTER: u16 = 0x7000;
+const GF_MASK: u16 = (1u16 << GF_BITS) - 1;
+const FEATURE_MASK: u8 = (1u8 << FEATURE_BITS) - 1;
+
 // Polyseed technically supports multiple coins, and the value for Monero is 0
 // See: https://github.com/tevador/polyseed/blob/dfb05d8edb682b0e8f743b1b70c9131712ff4157
 //   /include/polyseed.h#L57
@@ -130,6 +137,9 @@ pub enum PolyseedError {
   /// More than one language matched the mnemonic.
   #[cfg_attr(feature = "std", error("multiple languages match"))]
   MultipleLanguagesMatch,
+  /// The binary storage format was invalid.
+  #[cfg_attr(feature = "std", error("invalid format"))]
+  InvalidFormat,
 }
 
 /// Language options for Polyseed.
@@ -498,7 +508,8 @@ impl Polyseed {
         Err(
           PolyseedError::InvalidSeed |
           PolyseedError::InvalidEntropy |
-          PolyseedError::MultipleLanguagesMatch,
+          PolyseedError::MultipleLanguagesMatch |
+          PolyseedError::InvalidFormat,
         ) => {}
       }
     }
@@ -594,5 +605,68 @@ impl Polyseed {
       return Zeroizing::new(seed.nfc().collect());
     }
     seed
+  }
+
+  /// Serialize this seed to a 32-byte binary format.
+  ///
+  /// The stored bytes contain secret entropy and are not password protected
+  /// unless the seed was encrypted separately with [`Self::crypt`].
+  pub fn store(&self) -> Zeroizing<[u8; 32]> {
+    let mut storage = Zeroizing::new([0u8; 32]);
+    storage[.. 8].copy_from_slice(STORAGE_HEADER);
+    let v1 = (u16::from(self.features) << DATE_BITS) | self.birthday;
+    storage[8 .. 10].copy_from_slice(&v1.to_le_bytes());
+    storage[10 .. 10 + SECRET_SIZE].copy_from_slice(&self.entropy[.. SECRET_SIZE]);
+    storage[29] = STORAGE_EXTRA_BYTE;
+    let v2 = STORAGE_FOOTER | self.checksum;
+    storage[30 .. 32].copy_from_slice(&v2.to_le_bytes());
+    storage
+  }
+
+  /// Deserialize a seed from a 32-byte binary format. Accepts encrypted seeds.
+  pub fn load(storage: &[u8; 32], language: Language) -> Result<Polyseed, PolyseedError> {
+    if storage[.. 8] != *STORAGE_HEADER {
+      return Err(PolyseedError::InvalidFormat);
+    }
+
+    let v1 = u16::from_le_bytes([storage[8], storage[9]]);
+    let birthday = v1 & DATE_MASK;
+    let features_raw = v1 >> DATE_BITS;
+    if features_raw > u16::from(FEATURE_MASK) {
+      return Err(PolyseedError::InvalidFormat);
+    }
+    let features = u8::try_from(features_raw).map_err(|_| PolyseedError::InvalidFormat)?;
+
+    let mut entropy = Zeroizing::new([0u8; 32]);
+    entropy[.. SECRET_SIZE].copy_from_slice(&storage[10 .. 10 + SECRET_SIZE]);
+    if entropy[SECRET_SIZE - 1] & !LAST_BYTE_SECRET_BITS_MASK != 0 {
+      return Err(PolyseedError::InvalidFormat);
+    }
+
+    if storage[29] != STORAGE_EXTRA_BYTE {
+      return Err(PolyseedError::InvalidFormat);
+    }
+
+    let v2 = u16::from_le_bytes([storage[30], storage[31]]);
+    let stored_checksum = v2 & GF_MASK;
+    let footer = v2 & !GF_MASK;
+    if footer != STORAGE_FOOTER {
+      return Err(PolyseedError::InvalidFormat);
+    }
+
+    let seed = Polyseed { language, birthday, features, entropy, checksum: stored_checksum };
+
+    let mut poly = seed.to_poly();
+    poly[0] = stored_checksum;
+    if poly_eval(&poly) != 0 {
+      return Err(PolyseedError::InvalidChecksum);
+    }
+
+    // As with mnemonics, only reject the features once the checksum is known to be valid
+    if !polyseed_features_supported(features) {
+      return Err(PolyseedError::UnsupportedFeatures);
+    }
+
+    Ok(seed)
   }
 }
