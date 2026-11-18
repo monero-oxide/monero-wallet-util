@@ -100,6 +100,7 @@ fn poly_eval(poly: &Poly) -> u16 {
 // Key gen parameters
 const POLYSEED_SALT: &[u8] = b"POLYSEED key";
 const POLYSEED_KEYGEN_ITERATIONS: u32 = 10000;
+const POLYSEED_CRYPT_ITERATIONS: u32 = 10000;
 
 // Polyseed technically supports multiple coins, and the value for Monero is 0
 // See: https://github.com/tevador/polyseed/blob/dfb05d8edb682b0e8f743b1b70c9131712ff4157
@@ -517,6 +518,35 @@ impl Polyseed {
   /// This seed's features.
   pub fn features(&self) -> u8 {
     self.features
+  }
+
+  /// Returns `true` if this seed is currently encrypted.
+  pub fn is_encrypted(&self) -> bool {
+    (self.features & ENCRYPTED_MASK) != 0
+  }
+
+  /// Encrypt or decrypt this seed with a password (toggle).
+  ///
+  /// Passwords are normalized with NFKD. Encryption is not authenticated:
+  /// a wrong password produces a different seed without an error. Callers must
+  /// decrypt encrypted seeds before deriving their intended wallet key.
+  pub fn crypt(&mut self, password: &str) {
+    let normalized: Zeroizing<String> = Zeroizing::new(password.nfkd().collect());
+    let mut mask = Zeroizing::new([0u8; 32]);
+    let mut salt = [0u8; 16];
+    salt[.. 13].copy_from_slice(b"POLYSEED mask");
+    // salt[13] stays 0x00
+    salt[14] = 0xFF;
+    salt[15] = 0xFF;
+    pbkdf2_hmac::<Sha256>(normalized.as_bytes(), &salt, POLYSEED_CRYPT_ITERATIONS, mask.as_mut());
+
+    for i in 0 .. SECRET_SIZE {
+      self.entropy[i] ^= mask[i];
+    }
+    self.entropy[SECRET_SIZE - 1] &= LAST_BYTE_SECRET_BITS_MASK;
+
+    self.features ^= ENCRYPTED_MASK;
+    self.checksum = poly_eval(&self.to_poly());
   }
 
   /// This seed's entropy.
