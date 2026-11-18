@@ -218,7 +218,7 @@ fn valid_entropy(entropy: &Zeroizing<[u8; 32]>) -> bool {
 
 impl Polyseed {
   // TODO: Clean this
-  fn to_poly(&self) -> Poly {
+  fn to_poly(&self) -> Zeroizing<Poly> {
     let mut extra_bits = u32::from(FEATURE_BITS + DATE_BITS);
     let extra_val = (u16::from(self.features) << DATE_BITS) | self.birthday;
 
@@ -226,7 +226,7 @@ impl Polyseed {
     let mut secret_bits = BITS_PER_BYTE;
     let mut seed_rem_bits = SECRET_BITS - BITS_PER_BYTE;
 
-    let mut poly = [0; POLYSEED_LENGTH];
+    let mut poly = Zeroizing::new([0; POLYSEED_LENGTH]);
     for i in 0 .. DATA_WORDS {
       extra_bits -= 1;
 
@@ -319,7 +319,7 @@ impl Polyseed {
       return Err(PolyseedError::InvalidWordCount);
     }
     // Decode the seed into its polynomial coefficients
-    let mut poly = [0; POLYSEED_LENGTH];
+    let mut poly = Zeroizing::new([0; POLYSEED_LENGTH]);
 
     // Validate words are in the lang word list
     let lang_word_list: &WordList = &LANGUAGES[&lang];
@@ -391,7 +391,7 @@ impl Polyseed {
     let mut entropy_bits = 0;
 
     let checksum = poly[0];
-    for mut word_val in poly.into_iter().skip(POLY_NUM_CHECK_DIGITS) {
+    for mut word_val in poly.iter().copied().skip(POLY_NUM_CHECK_DIGITS) {
       // Parse the bottom bit, which is one of the bits of extra
       // This iterates for less than 16 iters, meaning this won't drop any bits
       extra <<= 1;
