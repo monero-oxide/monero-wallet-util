@@ -303,6 +303,19 @@ impl Polyseed {
     #[cfg(not(feature = "std"))]
     let birthday = 0;
 
+    Self::new_with_birthday(rng, language, birthday)
+  }
+
+  /// Create a seed using a birthday supplied by the caller, in Unix seconds.
+  ///
+  /// This permits `no_std` and browser callers to use their host clock. Timestamps
+  /// before the Polyseed epoch encode as the epoch; later timestamps are rounded
+  /// down to a Polyseed time step and wrap after the ten-bit birthday range.
+  pub fn new_with_birthday<R: RngCore + CryptoRng>(
+    rng: &mut R,
+    language: Language,
+    birthday: u64,
+  ) -> Polyseed {
     // Derive entropy
     let mut entropy = Zeroizing::new([0; 32]);
     rng.fill_bytes(entropy.as_mut());
