@@ -117,6 +117,25 @@ static LANGUAGES: LazyLock<HashMap<Language, WordList>> = LazyLock::new(|| {
   ])
 });
 
+// Language detection order matching Monero's `find_seed_language`
+// (`src/mnemonics/electrum-words.cpp`). Prefix sets overlap across languages,
+// so iterating in a fixed order keeps detection deterministic across runs.
+const LANGUAGE_ORDER: [Language; 13] = [
+  Language::Chinese,
+  Language::English,
+  Language::Dutch,
+  Language::French,
+  Language::Spanish,
+  Language::German,
+  Language::Italian,
+  Language::Portuguese,
+  Language::Japanese,
+  Language::Russian,
+  Language::Esperanto,
+  Language::Lojban,
+  Language::DeprecatedEnglish,
+];
+
 fn checksum_index(words: &[Zeroizing<String>], lang: &WordList) -> usize {
   let mut trimmed_words = Zeroizing::new(String::new());
   for w in words {
@@ -271,31 +290,31 @@ fn seed_to_bytes(lang: Language, words: &str) -> Result<Zeroizing<[u8; 32]>, See
 
   // convert to bytes
   let mut res = Zeroizing::new([0; 32]);
-  let mut indices = Zeroizing::new([0; 4]);
+  // Use fixed u64 accumulators so overflow rejection behaves identically on 32-bit and 64-bit
+  // targets.
+  let mut indices = Zeroizing::new([0u64; 4]);
+  let list_len = u64::try_from(lang_word_list.word_list.len()).unwrap();
   for i in 0 .. 8 {
     // read 3 indices at a time
     let i3 = i * 3;
-    indices[1] = matched_indices[i3];
-    indices[2] = matched_indices[i3 + 1];
-    indices[3] = matched_indices[i3 + 2];
+    indices[1] = u64::try_from(matched_indices[i3]).unwrap();
+    indices[2] = u64::try_from(matched_indices[i3 + 1]).unwrap();
+    indices[3] = u64::try_from(matched_indices[i3 + 2]).unwrap();
 
-    let inner = |i| {
-      let mut base = (lang_word_list.word_list.len() - indices[i] + indices[i + 1]) %
-        lang_word_list.word_list.len();
+    let inner = |i: usize| {
+      let mut base = (list_len - indices[i] + indices[i + 1]) % list_len;
       // Shift the index over
       for _ in 0 .. i {
-        base *= lang_word_list.word_list.len();
+        base *= list_len;
       }
       base
     };
     // set the last index
     indices[0] = indices[1] + inner(1) + inner(2);
-    if (indices[0] % lang_word_list.word_list.len()) != indices[1] {
-      Err(SeedError::InvalidSeed)?;
-    }
 
+    let word = u32::try_from(indices[0]).map_err(|_| SeedError::InvalidSeed)?;
     let pos = i * 4;
-    let mut bytes = u32::try_from(indices[0]).unwrap().to_le_bytes();
+    let mut bytes = word.to_le_bytes();
     res[pos .. (pos + 4)].copy_from_slice(&bytes);
     bytes.zeroize();
   }
@@ -336,6 +355,58 @@ impl Seed {
 
     // Call from_entropy so a trimmed seed becomes a full seed
     Ok(Self::from_entropy(lang, entropy).unwrap())
+  }
+
+  /// Parse a seed from a string, automatically detecting its language.
+  ///
+  /// Words, and prefixes of words, are shared across wordlists, so this follows Monero's
+  /// `find_seed_language`. Languages are tried in Monero's order, and the first language which
+  /// contains every word, and whose checksum is valid (if a checksum is present), is the seed's
+  /// language. If the words do not decode to a valid seed in that language, later languages are
+  /// not considered, as the result would not be the seed Monero recovers from this mnemonic.
+  #[allow(clippy::needless_pass_by_value)]
+  pub fn from_string_auto(words: Zeroizing<String>) -> Result<Seed, SeedError> {
+    let word_count = words.split_whitespace().take(SEED_LENGTH_WITH_CHECKSUM + 1).count();
+    if (word_count != SEED_LENGTH) && (word_count != SEED_LENGTH_WITH_CHECKSUM) {
+      Err(SeedError::InvalidSeed)?;
+    }
+    let has_checksum = word_count == SEED_LENGTH_WITH_CHECKSUM;
+
+    // The error to return if no language is selected
+    let mut error = SeedError::InvalidSeed;
+    for lang in LANGUAGE_ORDER {
+      let word_list = &LANGUAGES[&lang];
+      let contains_every_word = words.split_whitespace().all(|word| {
+        if has_checksum {
+          word_list
+            .trimmed_word_map
+            .contains_key(trim(word, word_list.unique_prefix_length).deref())
+        } else {
+          word_list.word_map.contains_key(word)
+        }
+      });
+      if !contains_every_word {
+        continue;
+      }
+
+      match Self::from_string(lang, words.clone()) {
+        // The words also exist in this language, yet the checksum is for another language (or
+        // the seed was mistyped)
+        Err(SeedError::InvalidChecksum) => error = SeedError::InvalidChecksum,
+        Err(SeedError::DeprecatedEnglishWithChecksum) => {
+          if error == SeedError::InvalidSeed {
+            error = SeedError::DeprecatedEnglishWithChecksum;
+          }
+        }
+        res @ (Ok(_) | Err(SeedError::InvalidSeed)) => return res,
+      }
+    }
+    Err(error)
+  }
+
+  /// Return the language of this seed.
+  pub fn language(&self) -> Language {
+    self.0
   }
 
   /// Create a seed from entropy.
